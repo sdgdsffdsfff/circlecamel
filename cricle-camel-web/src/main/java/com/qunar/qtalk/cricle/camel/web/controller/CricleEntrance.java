@@ -2,6 +2,7 @@ package com.qunar.qtalk.cricle.camel.web.controller;
 
 import com.google.common.base.Strings;
 import com.qunar.qtalk.cricle.camel.common.BaseCode;
+import com.qunar.qtalk.cricle.camel.common.consts.DefaultConfig;
 import com.qunar.qtalk.cricle.camel.common.dto.CamelAuthInfo;
 import com.qunar.qtalk.cricle.camel.common.holder.UserHolder;
 import com.qunar.qtalk.cricle.camel.common.result.JsonResult;
@@ -25,13 +26,13 @@ import org.springframework.web.bind.annotation.RestController;
 @RequestMapping("/newapi/cricle_camel/")
 public class CricleEntrance {
     private static final Logger LOGGER = LoggerFactory.getLogger(CricleEntrance.class);
-    public static final String HOST = "ejabhost1";
 
     @Autowired
     private CamelAuthService camelAuthService;
     @Autowired
     private CamelPostService camelPostService;
-
+    @Autowired
+    private DefaultConfig defaultConfig;
 
 
     @GetMapping("/entrance")
@@ -43,7 +44,7 @@ public class CricleEntrance {
             LOGGER.warn("q_ckey 为空！");
             return JsonResultUtils.fail(0, "permission denied");
         }
-        if (host.equals(HOST)) {
+        if (host.equals(defaultConfig.getSYSTEM_HOST())) {
             hostId = 1;
         } else {
             hostId = 2;
@@ -59,11 +60,12 @@ public class CricleEntrance {
         Integer hostId;
         String userName = UserHolder.getValue(CookieAuthUtils.KEY_USER_NAME);
         String host = UserHolder.getValue(CookieAuthUtils.KEY_USER_DOMAIN);
+        LOGGER.info("host is {}",host);
         if (Strings.isNullOrEmpty(userName) || Strings.isNullOrEmpty(host)) {
             LOGGER.warn("q_ckey 为空！");
             return JsonResultUtils.fail(BaseCode.NO_PERMISSION, CamelAuthInfo.builder().authSign(false).build());
         }
-        if (host.equals(HOST)) {
+        if (host.equals(defaultConfig.getSYSTEM_HOST())) {
             hostId = 1;
         } else {
             hostId = 2;

@@ -19,8 +19,8 @@ public class CamelAtListDto {
     @Setter
     public static class Data {
         /**
-         * host : ejabhost1
-         * user : lffan.liu
+         * host :
+         * user :
          */
         private String jid;
         private String text;

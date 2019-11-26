@@ -3,6 +3,7 @@ package com.qunar.qtalk.cricle.camel.common.event;
 import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.JSONObject;
 import com.qunar.qtalk.cricle.camel.common.consts.ContextConsts;
+import com.qunar.qtalk.cricle.camel.common.consts.DefaultConfig;
 import com.qunar.qtalk.cricle.camel.common.dto.SendMessageParam;
 import com.qunar.qtalk.cricle.camel.common.util.IDUtils;
 import com.qunar.qtalk.cricle.camel.common.util.JacksonUtils;
@@ -45,6 +46,8 @@ public class AtEventProducer {
 
     @Resource
     private CamelAuthMapper camelAuthMapper;
+    @Autowired
+    private DefaultConfig defaultConfig;
 
     public void produceEvent(CamelPost camelPost, List<SendMessageParam.ToEntity> users) {
         if (CollectionUtils.isEmpty(users)) {
@@ -59,7 +62,7 @@ public class AtEventProducer {
             camelMessage.setToHost(x.getHost());
             consumerEventService.consumerNotify(camelMessage);
            // String s = JSON.toJSONString(camelMessage);
-           // kafkaProducerService.synSendMessage(ContextConsts.KAFKA_SENDNOTIFY_KEY, s);
+           // kafkaProducerService.synSendSendPushMessage(ContextConsts.KAFKA_SENDNOTIFY_KEY, s);
         });
         // send message to at users
         sendAtPostMsg(camelPost,users);
@@ -88,7 +91,7 @@ public class AtEventProducer {
     private void sendAtPostMsg(CamelPost camelPost,List<SendMessageParam.ToEntity> users){
         SendMessageParam sendMessageParam = new SendMessageParam();
         sendMessageParam.setFrom(CIRCLE_CAMEL_ASSISTANT);
-        sendMessageParam.setFromhost("ejabhost1");
+        sendMessageParam.setFromhost(defaultConfig.getSYSTEM_HOST());
         sendMessageParam.setTo(users);
         sendMessageParam.setType("chat");
         sendMessageParam.setMsgtype("258"); //驼圈的@x消息提醒 消息类型258
@@ -142,7 +145,7 @@ public class AtEventProducer {
     private void sendAtCommentMsg(CamelComment camelComment,List<SendMessageParam.ToEntity> users){
         SendMessageParam sendMessageParam = new SendMessageParam();
         sendMessageParam.setFrom(CIRCLE_CAMEL_ASSISTANT);
-        sendMessageParam.setFromhost("ejabhost1");
+        sendMessageParam.setFromhost(defaultConfig.getSYSTEM_HOST());
         sendMessageParam.setTo(users);
         sendMessageParam.setType("chat");
         sendMessageParam.setMsgtype("258"); //驼圈的@x消息提醒 消息类型258
@@ -195,18 +198,7 @@ public class AtEventProducer {
 
 
 
-    private void sendMessage(String content,List<SendMessageParam.ToEntity> users){
-        SendMessageParam sendMessageParam = new SendMessageParam();
-        sendMessageParam.setFrom(CIRCLE_CAMEL_ASSISTANT);
-        sendMessageParam.setFromhost("ejabhost1");
-        sendMessageParam.setTo(users);
-        sendMessageParam.setType("chat");
-        sendMessageParam.setMsgtype("258"); //驼圈的@x消息提醒 消息类型258
-        sendMessageParam.setSystem("vs_circle_camel");
-        sendMessageParam.setContent(content);
-        consumerEventService.consumerMsg(JacksonUtils.obj2String(sendMessageParam));
-       // kafkaProducerService.synSendMessage(ContextConsts.KAFKA_SENDMESSAGE_KEY, JacksonUtils.obj2String(sendMessageParam));
-    }
+
 
     public EventModel transvantMessage(CamelPost camelPostDto) {
 

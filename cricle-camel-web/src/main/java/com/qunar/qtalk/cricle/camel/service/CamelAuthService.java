@@ -6,6 +6,7 @@ import com.google.common.base.Strings;
 import com.google.common.io.ByteStreams;
 import com.qunar.qtalk.cricle.camel.common.dto.CamelSpecialUserDto;
 import com.qunar.qtalk.cricle.camel.common.dto.ValidateMacTokenResult;
+import com.qunar.qtalk.cricle.camel.common.util.JacksonUtils;
 import com.qunar.qtalk.cricle.camel.common.util.RedisUtil;
 import com.qunar.qtalk.cricle.camel.entity.CamelUserModel;
 import com.qunar.qtalk.cricle.camel.mapper.CamelAuthMapper;
@@ -40,89 +41,70 @@ public class CamelAuthService {
     @Resource
     private RedisUtil redisUtil;
 
-    @Value("${legal_user_type}")
-    private String LEGAL_HIRE_TYPE;
+//    @Value("${legal_user_type}")
+//    private String LEGAL_HIRE_TYPE;
 
     @Value("${camel_circle_switch}")
     private String CAMEL_CIRCLE_SWITCH;
 
-    @Value("${special_users}")
-    private String specialUsers;
+//    @Value("${special_users}")
+//    private String specialUsers;
 
-    @Value("${special_dep1}")
-    private String specialDep1;
+//    @Value("${special_dep1}")
+//    private String specialDep1;
+//
+//    @Value("${unlegal_dep1}")
+//    private String unlegaldep1;
 
-    @Value("${unlegal_dep1}")
-    private String unlegaldep1;
 
+//    private static final List<String> users = new ArrayList<>();
+//    private static final List<String> legalType = new LinkedList<>();
+//    private static final Set<String> specialUsersForEntrance = new HashSet<>();
+//    private static final List<String> unleagal_dep = new LinkedList<>();
+//    private static final Map<String, List<String>> specialDep1ForEntranceMap = new HashMap<>();
 
-    private static final List<String> users = new ArrayList<>();
-    private static final List<String> legalType = new LinkedList<>();
-    private static final Set<String> specialUsersForEntrance = new HashSet<>();
-    private static final List<String> unleagal_dep = new LinkedList<>();
-    private static final Map<String, List<String>> specialDep1ForEntranceMap = new HashMap<>();
-
-    @PostConstruct
-    private void init() throws IOException {
-        legalType.addAll(Splitter.on(";").splitToList(LEGAL_HIRE_TYPE));
-        unleagal_dep.addAll(Splitter.on(";").splitToList(unlegaldep1));
-        users.addAll(Splitter.on(";").splitToList(specialUsers));
-        CamelSpecialUserDto camelSpecialUserDto = genQtalkConfig("special.json");
-        camelSpecialUserDto.getData().stream().forEach(x -> {
-            specialUsersForEntrance.add(x.getUserID());
-        });
-        List<String> specinalDep1List
-                = Splitter.on(";").splitToList(specialDep1);
-        if (CollectionUtils.isNotEmpty(specinalDep1List)) {
-            specinalDep1List.forEach(specinalDep1 -> {
-                if (!Strings.isNullOrEmpty(specinalDep1)) {
-                    String[] split = StringUtils.split(specinalDep1, ":");
-                    String dep1 = split[0];
-                    String hireTypeString = split[1];
-                    List<String> hireTypeList = Splitter.on(",").splitToList(hireTypeString);
-                    specialDep1ForEntranceMap.put(dep1, hireTypeList);
-                }
-            });
-        }
-    }
+//    @PostConstruct
+//    private void init() throws IOException {
+//        legalType.addAll(Splitter.on(";").splitToList(LEGAL_HIRE_TYPE));
+//        unleagal_dep.addAll(Splitter.on(";").splitToList(unlegaldep1));
+//        users.addAll(Splitter.on(";").splitToList(specialUsers));
+//        CamelSpecialUserDto camelSpecialUserDto = genQtalkConfig("special.json");
+//        camelSpecialUserDto.getData().stream().forEach(x -> {
+//            specialUsersForEntrance.add(x.getUserID());
+//        });
+//        List<String> specinalDep1List
+//                = Splitter.on(";").splitToList(specialDep1);
+//        if (CollectionUtils.isNotEmpty(specinalDep1List)) {
+//            specinalDep1List.forEach(specinalDep1 -> {
+//                if (!Strings.isNullOrEmpty(specinalDep1)) {
+//                    String[] split = StringUtils.split(specinalDep1, ":");
+//                    String dep1 = split[0];
+//                    String hireTypeString = split[1];
+//                    List<String> hireTypeList = Splitter.on(",").splitToList(hireTypeString);
+//                    specialDep1ForEntranceMap.put(dep1, hireTypeList);
+//                }
+//            });
+//        }
+//    }
 
     @Resource
     private CamelAuthMapper camelAuthMapper;
 
     public boolean authUser(String userId, Integer hostId) {
-        String hireType = "", dep1 = "";
-        if (!CAMEL_CIRCLE_SWITCH.equals("true")) {
-            if (users.contains(userId)) {
-                return true;  //特殊用户一直打开接口
-            }
+        if (!CAMEL_CIRCLE_SWITCH.equalsIgnoreCase("true")) {
             return false;
         }
         try {
             CamelUserModel camelUserModel = camelAuthMapper.selectUserModel(userId, hostId);
-            if (camelUserModel != null) {
-                hireType = camelUserModel.getHireType();
-                dep1 = camelUserModel.getDep1();
+            LOGGER.info("USER INFO is {}", JacksonUtils.obj2String(camelUserModel));
+            if (camelUserModel == null) {
+                return false;
             }
+            return true;
         } catch (RuntimeException e) {
             LOGGER.error("select hireType from host_users fail,userId:{},hostId:{}", userId, hostId, e);
             return false;
         }
-        if (legalType.contains(hireType) && !unleagal_dep.contains(dep1)) {
-            return true;
-        }
-        if (specialUsersForEntrance.contains(userId)) {
-            return true;
-        }
-        if (specialDep1ForEntranceMap.containsKey(dep1)) {
-            List<String> hireTypeList = specialDep1ForEntranceMap.get(dep1);
-            if (CollectionUtils.isNotEmpty(hireTypeList)) {
-                if (!hireTypeList.contains(hireType)) {
-                    return false;
-                }
-            }
-            return true;
-        }
-        return false;
     }
 
     public CamelSpecialUserDto genQtalkConfig(String configName) throws IOException {

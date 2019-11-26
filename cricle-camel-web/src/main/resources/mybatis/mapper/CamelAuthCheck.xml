@@ -18,7 +18,7 @@
             host_id AS userHost,
             user_name AS userCName,
             hire_type AS hireType
-        from host_users where (hire_type='正式' or hire_type='实习' or hire_type='实习（HC）')  and hire_flag=1  and user_type!='R'
+        from host_users where hire_flag=1 ;
     </select>
 
     <select id="getUserByUserName" resultType="com.qunar.qtalk.cricle.camel.entity.CamelUserModel">

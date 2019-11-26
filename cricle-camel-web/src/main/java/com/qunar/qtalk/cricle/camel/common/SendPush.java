@@ -4,20 +4,24 @@ import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.JSONObject;
 import com.google.common.base.Strings;
 import com.google.common.collect.Maps;
+import com.qunar.qtalk.cricle.camel.common.consts.DefaultConfig;
+import com.qunar.qtalk.cricle.camel.common.dto.SendMessageParam;
 import com.qunar.qtalk.cricle.camel.common.dto.UserModelDto;
 import com.qunar.qtalk.cricle.camel.common.util.HttpClientUtils;
+import com.qunar.qtalk.cricle.camel.common.util.JacksonUtils;
 import lombok.extern.slf4j.Slf4j;
+import org.dom4j.Document;
+import org.dom4j.DocumentHelper;
+import org.dom4j.Element;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
-import java.util.Dictionary;
-import java.util.Hashtable;
-import java.util.List;
-import java.util.Map;
 
-import static com.qunar.qtalk.cricle.camel.common.consts.QmoConsts.SEND_NOTIFY_FAIL;
+import javax.annotation.Resource;
+import java.util.*;
+
 
 /**
  * SendPush
@@ -30,7 +34,6 @@ import static com.qunar.qtalk.cricle.camel.common.consts.QmoConsts.SEND_NOTIFY_F
 public class SendPush {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(SendPush.class);
-    private static final String FROM = "admin@ejabhost1";
 
     @Value("${url_send_notify}")
     private String sendUrl;
@@ -38,9 +41,12 @@ public class SendPush {
     @Value("${qtalk_send_message}")
     private String sendMessageUrl;
 
+    @Resource
+    private DefaultConfig defaultConfig;
+
     public boolean sendNotify(UserModelDto user, String data) {
         Dictionary<String, Object> args = new Hashtable<>();
-        args.put("from", FROM);
+        args.put("from", "admin"+"@"+defaultConfig.getSYSTEM_HOST());
         args.put("category", "12");
         args.put("data", data);
         args.put("to", user.getBareJid());
@@ -59,7 +65,7 @@ public class SendPush {
     }
     public boolean bathSendNotify(List<String> users, String data) {
         Dictionary<String, Object> args = new Hashtable<>();
-        args.put("from", FROM);
+        args.put("from", "admin"+"@"+defaultConfig.getSYSTEM_HOST());
         args.put("category", "12");
         args.put("data", data);
         args.put("to", users);
@@ -78,53 +84,31 @@ public class SendPush {
     }
 
     public boolean sendMessage(String msg) {
-        String res;
         try {
-            res = HttpClientUtils.postJson(sendMessageUrl, msg);
-            LOGGER.info("send message to :{}, ret;{}", msg, res);
+            SendMessageParam sendMessageParam;
+            if (Strings.isNullOrEmpty(msg)) {
+                return false;
+            }
+            sendMessageParam = JacksonUtils.string2Obj(msg, SendMessageParam.class);
+            List<SendMessageParam.ToEntity> toUsers = sendMessageParam.getTo();
+            if (toUsers == null || toUsers.size() == 0) {
+                return false;
+            }
+            toUsers.stream().forEach(x -> {
+                String originMsg = makeMessage(sendMessageParam.getType(), sendMessageParam.getFrom() + "@" + sendMessageParam.getFromhost(), x.getUser() + "@" + x.getHost(),
+                        sendMessageParam.getExtendinfo(), sendMessageParam.getMsgtype(), sendMessageParam.getContent(), sendMessageParam.getBackupinfo(), sendMessageParam.getAuto_reply());
+                String res;
+                res = HttpClientUtils.postJson(sendMessageUrl, originMsg);
+                LOGGER.info("send message to :{}, ret;{}", msg, res);
+
+            });
         } catch (Exception e) {
-            LOGGER.error("send message fail", e);
+            LOGGER.error("send message error,msg is {}", msg);
             return false;
         }
         return true;
     }
 
-    public boolean sendNotifyForPost(UserModelDto user, String data) {
-        Dictionary<String, Object> args = new Hashtable<>();
-        args.put("from", FROM);
-        args.put("category", "13");
-        args.put("data", data);
-        args.put("to", user.getBareJid());
-        String res = null;
-        try {
-            res = HttpClientUtils.postJson(sendUrl, JSON.toJSONString(args));
-            LOGGER.info(" post send notify to :{}, ret;{}", JSON.toJSONString(args), res);
-        } catch (Exception e) {
-            LOGGER.error("发送通知消息异常,{}", e);
-            return false;
-        }
-        return checkPushResult(res);
-    }
-
-    public Map<UserModelDto, Boolean> sendNotify(List<UserModelDto> users, String data) {
-        Dictionary<String, Object> args = new Hashtable<>();
-        Map<UserModelDto, Boolean> pushResMap = Maps.newHashMap();
-        args.put("from", FROM);
-        args.put("category", "12");
-        args.put("data", data);
-        for (UserModelDto user : users) {
-            args.put("to", user.getBareJid());
-            String ret = null;
-            try {
-                ret = HttpClientUtils.postJson(sendUrl, JSON.toJSONString(args));
-                LOGGER.info("send notify to :{}, ret;{}", JSON.toJSONString(args), ret);
-            } catch (Exception e) {
-                LOGGER.error("发送通知消息异常,{}", e);
-            }
-            pushResMap.put(user, checkPushResult(ret));
-        }
-        return pushResMap;
-    }
 
     /**
      * sendPush 返回结果校验
@@ -143,5 +127,32 @@ public class SendPush {
             LOGGER.error("sendPush 返回结果解析异常", e);
         }
         return resStatus;
+    }
+    public static String makeMessage(String type, String from, String to,  String extendInfo, String msgType, String content,
+                                     String backupinfo, String autoReply) {
+
+        Document document = DocumentHelper.createDocument();
+        Element message = document.addElement("message");
+
+        message.addAttribute("from", from);
+        message.addAttribute("to", to);
+        message.addAttribute("auto_reply", autoReply);
+        message.addAttribute("type", type);
+
+        Element body = message.addElement("body");
+        body.addAttribute("id", "qtalk-corp-service-" + UUID.randomUUID().toString());
+        body.addAttribute("msgType", msgType);
+        body.addAttribute("maType", "20");
+        body.addAttribute("extendInfo", extendInfo);
+        body.addAttribute("backupinfo", backupinfo);
+        body.addText(content);
+
+        Map<String, String> args = new HashMap<>();
+        args.put("from", from);
+        args.put("to", to);
+        args.put("message", message.asXML());
+        args.put("system", "oa-service");
+        args.put("type", type);
+        return  JacksonUtils.obj2String(args);
     }
 }
