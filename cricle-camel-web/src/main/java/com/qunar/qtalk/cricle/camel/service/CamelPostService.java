@@ -35,6 +35,7 @@ import org.apache.commons.lang3.tuple.Pair;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.aop.framework.AopContext;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
 import org.springframework.stereotype.Service;
@@ -104,7 +105,8 @@ public class CamelPostService {
 
     @Resource
     private AnonymousInfoHide commnetAnonymousInfoHide;
-
+    @Autowired
+    private DefaultConfig defaultConfig;
     private static final String URL_SLOGN = "分享了一条链接!";
     private static final String VIDEO_SLOGN = "分享了一条视频!";
 
@@ -603,7 +605,7 @@ public class CamelPostService {
      */
     private String transNameFromOwner(String owner, String ownerHost) {
         Integer hostId = 2;
-        if (StringUtils.equals(ownerHost, CricleEntrance.HOST)) {
+        if (StringUtils.equals(ownerHost, defaultConfig.getSYSTEM_HOST())) {
             hostId = 1;
         }
         CamelUserModel camelUserModel = camelAuthMapper.selectUserModel(owner, hostId);

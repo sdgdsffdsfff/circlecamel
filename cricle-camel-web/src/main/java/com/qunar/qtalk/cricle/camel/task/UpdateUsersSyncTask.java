@@ -3,6 +3,7 @@ package com.qunar.qtalk.cricle.camel.task;
 import com.alibaba.fastjson.JSON;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.io.ByteStreams;
+import com.qunar.qtalk.cricle.camel.common.consts.DefaultConfig;
 import com.qunar.qtalk.cricle.camel.common.dto.CamelSpecialUserDto;
 import com.qunar.qtalk.cricle.camel.common.exception.TaskException;
 import com.qunar.qtalk.cricle.camel.common.redis.RedisAccessor;
@@ -12,6 +13,7 @@ import com.qunar.qtalk.cricle.camel.entity.CamelUserModel;
 import com.qunar.qtalk.cricle.camel.mapper.CamelAuthMapper;
 import com.qunar.qtalk.cricle.camel.service.CamelAuthService;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 
 import javax.annotation.Resource;
@@ -43,7 +45,8 @@ public class UpdateUsersSyncTask extends AbstractTask {
     public UpdateUsersSyncTask(String taskName, String cron) {
         super(taskName, cron);
     }
-
+    @Autowired
+    private DefaultConfig defaultConfig;
     @Override
     public void doTask() throws TaskException {
 
@@ -54,7 +57,7 @@ public class UpdateUsersSyncTask extends AbstractTask {
             users = camelAuthMapper.selectLegalUser();
             users.stream().forEach(x->{
                 if(x.getUserHost().equals("1")){
-                    x.setUserHost("ejabhost1");
+                    x.setUserHost(defaultConfig.getSYSTEM_HOST());
                 }
             });
         } catch (RuntimeException e) {
@@ -69,7 +72,7 @@ public class UpdateUsersSyncTask extends AbstractTask {
             camelSpecialUserDto = camelAuthService.genQtalkConfig("special.json");
             if(camelSpecialUserDto!=null){
                 camelSpecialUserDto.getData().stream().forEach(x->{
-                    userList.add(new CamelUserModel(x.getUserID(),"ejabhost1"));
+                    userList.add(new CamelUserModel(x.getUserID(),defaultConfig.getSYSTEM_HOST()));
                 });
             }
         } catch (IOException e) {

@@ -1,5 +1,7 @@
 package com.qunar.qtalk.cricle.camel.common.consts;
 
+import org.springframework.beans.factory.annotation.Value;
+
 import java.util.TreeSet;
 
 /**
@@ -44,5 +46,8 @@ public class ContextConsts {
 
 
     public static final int[] REATAIN_DATE = new int[]{1, 2,3,4,5,6,7,14,30,60,90};
+
+    @Value("${startalk_host}")
+    public String SYSTEM_HOST;
 
 }

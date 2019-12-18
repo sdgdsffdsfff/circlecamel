@@ -66,7 +66,6 @@ public class CommentAtListHandle extends BaseEventHandler {
     public boolean handleAtMessage(String msg) {
         CamelMessage camelMessage = JSON.parseObject(msg, CamelMessage.class); //@消息入库
         camelMessage.setUuid(IDUtils.getUUIDUpper());
-        //TODO @消息落库
         return sendPush.sendMessage(msg);
     }
 

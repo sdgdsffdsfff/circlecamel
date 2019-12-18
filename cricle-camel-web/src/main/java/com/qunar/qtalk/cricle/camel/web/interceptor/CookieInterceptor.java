@@ -3,12 +3,14 @@ package com.qunar.qtalk.cricle.camel.web.interceptor;
 import com.google.common.base.Strings;
 import com.google.common.collect.Maps;
 import com.qunar.qtalk.cricle.camel.common.consts.ContextConsts;
+import com.qunar.qtalk.cricle.camel.common.consts.DefaultConfig;
 import com.qunar.qtalk.cricle.camel.common.holder.UserHolder;
 import com.qunar.qtalk.cricle.camel.common.util.CookieAuthUtils;
 import com.qunar.qtalk.cricle.camel.common.util.CookieUtils;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections4.MapUtils;
 import org.slf4j.MDC;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.servlet.HandlerInterceptor;
 import org.springframework.web.servlet.ModelAndView;
 
@@ -27,7 +29,8 @@ import static com.qunar.qtalk.cricle.camel.common.util.CookieAuthUtils.KEY_USER_
 public class CookieInterceptor implements HandlerInterceptor {
 
     public static final String COOKIE_CKEY_NAME = "q_ckey";
-
+    @Autowired
+    private DefaultConfig defaultConfig;
     @Override
     public boolean preHandle(HttpServletRequest request, HttpServletResponse response, Object o) throws Exception {
         try {
@@ -36,7 +39,7 @@ public class CookieInterceptor implements HandlerInterceptor {
                 log.warn("request not attach user cKey info");
                 Map<String,String> defaultUserMap = Maps.newHashMap();
                 defaultUserMap.put(KEY_USER_NAME, "System_Default");
-                defaultUserMap.put(KEY_USER_DOMAIN, "ejabhost1");
+                defaultUserMap.put(KEY_USER_DOMAIN, defaultConfig.SYSTEM_HOST);
                 UserHolder.set(defaultUserMap);
             } else {
                 Map<String, String> userInfoMap = CookieAuthUtils.getUserFromCKey(cKey);

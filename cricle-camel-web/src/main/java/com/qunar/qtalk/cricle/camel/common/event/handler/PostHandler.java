@@ -15,7 +15,6 @@ import com.qunar.qtalk.cricle.camel.common.util.IDUtils;
 import com.qunar.qtalk.cricle.camel.common.util.JacksonUtils;
 import com.qunar.qtalk.cricle.camel.entity.CamelMessage;
 import com.qunar.qtalk.cricle.camel.service.CamelMessageService;
-import javafx.geometry.Pos;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 

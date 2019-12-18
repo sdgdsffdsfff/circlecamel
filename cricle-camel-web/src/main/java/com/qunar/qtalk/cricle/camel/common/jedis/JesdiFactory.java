@@ -29,23 +29,29 @@ public class JesdiFactory {
         return jedisPoolConfig;
     }
 
-    @Bean
-    public RedisSentinelConfiguration redisSentinelConfiguration() {
-        RedisSentinelConfiguration redisSentinelConfiguration = new RedisSentinelConfiguration();
-        RedisNode master = new RedisNode(jedisConfig.getSentinelMaster(),0);
-        master.setName(jedisConfig.getSentinelMaster());
-        Set<RedisNode> sentinels = new HashSet<>();
-        sentinels.add(new RedisNode(jedisConfig.getSentinelHost1(), jedisConfig.getSentinelPort()));
-        sentinels.add(new RedisNode(jedisConfig.getSentinelHost2(), jedisConfig.getSentinelPort()));
-        redisSentinelConfiguration.setMaster(master);
-        redisSentinelConfiguration.setSentinels(sentinels);
-        return redisSentinelConfiguration;
-    }
+//    @Bean
+//    public RedisSentinelConfiguration redisSentinelConfiguration() {
+//        RedisSentinelConfiguration redisSentinelConfiguration = new RedisSentinelConfiguration();
+//        RedisNode master = new RedisNode(jedisConfig.getSentinelMaster(),0);
+//        master.setName(jedisConfig.getSentinelMaster());
+//        Set<RedisNode> sentinels = new HashSet<>();
+//        sentinels.add(new RedisNode(jedisConfig.getSentinelHost1(), jedisConfig.getSentinelPort()));
+//        sentinels.add(new RedisNode(jedisConfig.getSentinelHost2(), jedisConfig.getSentinelPort()));
+//        redisSentinelConfiguration.setMaster(master);
+//        redisSentinelConfiguration.setSentinels(sentinels);
+//        return redisSentinelConfiguration;
+//    }
 
     @Bean
     public JedisConnectionFactory jedisConnectionFactory() {
-        JedisConnectionFactory jedisConnectionFactory = new JedisConnectionFactory(redisSentinelConfiguration(), jedisPoolConfigFactory());
+//        JedisConnectionFactory jedisConnectionFactory = new JedisConnectionFactory(redisSentinelConfiguration(), jedisPoolConfigFactory());
+//        jedisConnectionFactory.setPassword(jedisConfig.getSentinelPass());
+//        jedisConnectionFactory.afterPropertiesSet();
+        JedisConnectionFactory jedisConnectionFactory = new JedisConnectionFactory();
+        jedisConnectionFactory.setHostName(jedisConfig.getSentinelHost1());
+        jedisConnectionFactory.setPort(jedisConfig.getSentinelPort());
         jedisConnectionFactory.setPassword(jedisConfig.getSentinelPass());
+        jedisConnectionFactory.setPoolConfig(jedisPoolConfigFactory());
         jedisConnectionFactory.afterPropertiesSet();
         return jedisConnectionFactory;
     }
@@ -57,5 +63,4 @@ public class JesdiFactory {
         stringRedisTemplate.afterPropertiesSet();
         return stringRedisTemplate;
     }
-
 }
